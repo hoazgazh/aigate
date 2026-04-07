@@ -28,7 +28,7 @@ aigate is a lightweight proxy that exposes OpenAI and Anthropic-compatible APIs 
 
 ```bash
 # Download (macOS Apple Silicon)
-curl -fsSL https://github.com/nguyenbahoanganh/aigate/releases/latest/download/aigate-darwin-arm64 -o aigate
+curl -fsSL https://github.com/hoazgazh/aigate/releases/latest/download/aigate-darwin-arm64 -o aigate
 chmod +x aigate
 
 # Run
@@ -42,7 +42,7 @@ API available at `http://localhost:8000`
 ### Build from source
 
 ```bash
-git clone https://github.com/nguyenbahoanganh/aigate.git
+git clone https://github.com/hoazgazh/aigate.git
 cd aigate
 make build
 API_KEY=my-secret-key ./bin/aigate
@@ -51,7 +51,7 @@ API_KEY=my-secret-key ./bin/aigate
 ### Docker
 
 ```bash
-docker run -p 8000:8000 -e API_KEY=my-secret-key ghcr.io/nguyenbahoanganh/aigate
+docker run -p 8000:8000 -e API_KEY=my-secret-key ghcr.io/hoazgazh/aigate
 ```
 
 ## API Endpoints
