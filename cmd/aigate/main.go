@@ -22,7 +22,20 @@ func main() {
 
 	router, err := api.NewRouterWithProvider(cfg)
 	if err != nil {
-		log.Fatalf("failed to init provider: %v", err)
+		fmt.Printf("\n❌ %v\n\n", err)
+		fmt.Println("aigate auto-detects credentials from:")
+		fmt.Println("  • ~/.local/share/kiro-cli/data.sqlite3  (kiro-cli)")
+		fmt.Println("  • ~/.aws/sso/cache/kiro-auth-token.json (Kiro IDE)")
+		fmt.Println("")
+		fmt.Println("Make sure you have logged in first:")
+		fmt.Println("  kiro-cli login     (Linux/WSL)")
+		fmt.Println("  or open Kiro IDE   (macOS)")
+		fmt.Println("")
+		fmt.Println("Or set manually:")
+		fmt.Println("  export KIRO_CLI_DB_FILE=~/.local/share/kiro-cli/data.sqlite3")
+		fmt.Println("  export KIRO_CREDS_FILE=~/.aws/sso/cache/kiro-auth-token.json")
+		fmt.Println("  export REFRESH_TOKEN=your_token_here")
+		os.Exit(1)
 	}
 
 	srv := &http.Server{

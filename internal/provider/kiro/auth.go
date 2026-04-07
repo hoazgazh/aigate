@@ -7,6 +7,9 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"os"
+	"path/filepath"
+	"strings"
 	"sync"
 	"time"
 )
@@ -47,7 +50,7 @@ func NewAuthManager(refreshToken, profileARN, region, credsFile, cliDBFile strin
 	case credsFile != "":
 		creds, err = LoadFromJSON(credsFile)
 		if err != nil {
-			return nil, fmt.Errorf("load json credentials: %w", err)
+			return nil, fmt.Errorf("credentials file error: %w\n\n  Check that the file exists and you are logged in to Kiro IDE or kiro-cli", err)
 		}
 		log.Printf("[auth] loaded credentials from JSON (%s), type=%d", credsFile, creds.AuthType)
 
@@ -56,7 +59,22 @@ func NewAuthManager(refreshToken, profileARN, region, credsFile, cliDBFile strin
 		log.Printf("[auth] loaded credentials from env vars, type=%d", creds.AuthType)
 
 	default:
-		return nil, fmt.Errorf("no credentials configured: set KIRO_CLI_DB_FILE, KIRO_CREDS_FILE, or REFRESH_TOKEN")
+		// Auto-detect: try common paths
+		autoPath := autoDetectCredentials()
+		if autoPath != "" {
+			if strings.HasSuffix(autoPath, ".sqlite3") {
+				creds, err = LoadFromSQLite(autoPath)
+			} else {
+				creds, err = LoadFromJSON(autoPath)
+			}
+			if err == nil {
+				log.Printf("[auth] auto-detected credentials from %s, type=%d", autoPath, creds.AuthType)
+			} else {
+				return nil, fmt.Errorf("auto-detected %s but failed to load: %w", autoPath, err)
+			}
+		} else {
+			return nil, fmt.Errorf("no credentials found")
+		}
 	}
 
 	if creds.Region == "" {
@@ -146,7 +164,27 @@ func (am *AuthManager) ProfileARN() string {
 	return am.creds.ProfileARN
 }
 
-// refresh performs the actual token refresh based on auth type.
+// autoDetectCredentials tries common credential paths.
+func autoDetectCredentials() string {
+	home, err := os.UserHomeDir()
+	if err != nil {
+		return ""
+	}
+
+	paths := []string{
+		filepath.Join(home, ".local", "share", "kiro-cli", "data.sqlite3"),
+		filepath.Join(home, ".local", "share", "amazon-q", "data.sqlite3"),
+		filepath.Join(home, ".aws", "sso", "cache", "kiro-auth-token.json"),
+	}
+
+	for _, p := range paths {
+		if _, err := os.Stat(p); err == nil {
+			return p
+		}
+	}
+	return ""
+}
+
 func (am *AuthManager) refresh() error {
 	switch am.creds.AuthType {
 	case AuthAWSSSOOIDC:

@@ -45,8 +45,26 @@ curl -fsSL https://github.com/hoazgazh/aigate/releases/latest/download/aigate-li
 You need a Kiro account. Log in to [Kiro IDE](https://kiro.dev/) or run `kiro-cli login` first.
 
 ```bash
-export API_KEY="my-secret-key"                                      # You make this up — protects your proxy
-export KIRO_CREDS_FILE="~/.aws/sso/cache/kiro-auth-token.json"     # Created by Kiro IDE after login
+export API_KEY="my-secret-key"    # You make this up — protects your proxy
+```
+
+aigate auto-detects your credentials from these locations (in order):
+
+| Source | Path | Used by |
+|--------|------|---------|
+| kiro-cli SQLite | `~/.local/share/kiro-cli/data.sqlite3` | Linux / WSL / kiro-cli users |
+| amazon-q SQLite | `~/.local/share/amazon-q/data.sqlite3` | amazon-q-developer-cli users |
+| Kiro IDE JSON | `~/.aws/sso/cache/kiro-auth-token.json` | macOS / Kiro IDE users |
+
+**No extra config needed** if you've already logged in with `kiro-cli login` or Kiro IDE.
+
+To override auto-detection:
+```bash
+# Linux / kiro-cli
+export KIRO_CLI_DB_FILE="~/.local/share/kiro-cli/data.sqlite3"
+
+# macOS / Kiro IDE
+export KIRO_CREDS_FILE="~/.aws/sso/cache/kiro-auth-token.json"
 ```
 
 ### 3. Start
