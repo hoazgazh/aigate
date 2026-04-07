@@ -30,11 +30,25 @@ Download one binary, run it, point your tools at `http://localhost:8000/v1` — 
 
 > **No paid API keys needed.** aigate uses your existing free-tier accounts to provide API access.
 
-### Works with Cursor, Cline, Codex CLI, and More
+### Not Just Free Tier — Works with Pro Subscriptions Too
 
-Any tool that supports OpenAI or Anthropic APIs works out of the box:
+Many AI subscriptions (Kiro Pro, GitHub Copilot Pro/Pro+) give you access to powerful models but **don't provide an API key**. aigate unlocks API access from these subscriptions too:
 
-Cursor • Claude Code • Codex CLI • OpenCode • Aider • Cline • Roo Code • Kilo Code • Continue • Zed • Windsurf • OpenAI SDK • Anthropic SDK • LangChain • Obsidian
+| Subscription | Models you unlock | API key provided? | aigate? |
+|-------------|-------------------|-------------------|---------|
+| Kiro Free | Claude Sonnet 4.5, Haiku 4.5 | ❌ No API | ✅ Works |
+| Kiro Pro (paid) | Claude Opus 4.5, higher limits | ❌ No API | ✅ Works |
+| Copilot Free | GPT-4.1, Claude 3.5 | ❌ No API | ✅ Works |
+| Copilot Pro ($10/mo) | Unlimited completions, more models | ❌ No API | ✅ Works |
+| Copilot Pro+ ($39/mo) | GPT-5, o3-pro, highest limits | ❌ No API | ✅ Works |
+
+> **If you're paying for a Pro subscription but can't use it outside the IDE — aigate fixes that.** Use your Pro models with Cursor, Cline, OpenClaw, Aider, or any OpenAI-compatible tool.
+
+### Works with OpenClaw, Cursor, Cline, Codex CLI, and More
+
+aigate provides the OpenAI-compatible backend that tools like [OpenClaw](https://github.com/openclaw/openclaw) and coding IDEs need. Any tool that supports OpenAI or Anthropic APIs works out of the box:
+
+[OpenClaw](https://github.com/openclaw/openclaw) • Cursor • Claude Code • Codex CLI • OpenCode • Aider • Cline • Roo Code • Kilo Code • Continue • Zed • Windsurf • OpenAI SDK • Anthropic SDK • LangChain • Obsidian
 
 > **None of these tools support Kiro or Copilot Free natively.** aigate bridges the gap — it translates their standard API calls into each provider's internal format.
 
@@ -78,7 +92,7 @@ export API_KEY="my-secret-key"    # You make this up — protects your proxy
 ```
 
 ```
-⚡ aigate v0.2.0
+⚡ aigate v0.3.0
    ├─ Listening on http://0.0.0.0:8000
    ├─ OpenAI API:    /v1/chat/completions
    ├─ Anthropic API: /v1/messages
@@ -102,6 +116,45 @@ curl http://localhost:8000/v1/chat/completions \
   -H "Content-Type: application/json" \
   -d '{"model":"copilot/gpt-4.1","messages":[{"role":"user","content":"Hello!"}]}'
 ```
+
+---
+
+## Use with OpenClaw
+
+[OpenClaw](https://github.com/openclaw/openclaw) is a personal AI assistant (351k+ stars) that runs on your own devices and connects to WhatsApp, Telegram, Slack, Discord, and 20+ other channels. It needs an OpenAI-compatible API endpoint — aigate provides exactly that, for free.
+
+### Setup
+
+1. Start aigate (see Quick Start above)
+2. Configure OpenClaw to use aigate as its model provider:
+
+```json
+{
+  "agent": {
+    "model": "claude-sonnet-4-5"
+  },
+  "providers": {
+    "openai": {
+      "baseURL": "http://localhost:8000/v1",
+      "apiKey": "my-secret-key"
+    }
+  }
+}
+```
+
+3. Run OpenClaw:
+```bash
+openclaw onboard --install-daemon
+```
+
+Now your OpenClaw assistant uses Claude Sonnet 4.5 (via Kiro) or GPT-4.1 (via Copilot) — completely free. Switch models by changing the `model` field.
+
+### Why aigate + OpenClaw?
+
+- **Free AI backend** — no Anthropic or OpenAI API key needed
+- **Multiple models** — switch between Claude and GPT without changing providers
+- **Co-host on same server** — aigate uses <10MB RAM, runs alongside OpenClaw on a Raspberry Pi or $5 VPS
+- **Always-on** — aigate handles token refresh automatically, OpenClaw stays connected 24/7
 
 ---
 
@@ -184,7 +237,7 @@ print(response.content[0].text)
 aigate acts as a proxy between your tools and Kiro. It translates OpenAI/Anthropic API calls into Kiro's internal format, handles authentication, token refresh, and streaming automatically.
 
 ```
-Your Tool (Cursor, Cline, SDK...)
+Your Tool (OpenClaw, Cursor, Cline, SDK...)
     ↓ OpenAI/Anthropic API
   aigate (localhost:8000)
     ├─ claude-*     → Kiro → Claude Sonnet 4.5, Haiku 4.5
@@ -305,6 +358,22 @@ docker run -p 8000:8000 \
   -v ~/.local/share/kiro-cli:/root/.local/share/kiro-cli:ro \
   ghcr.io/hoazgazh/aigate
 ```
+
+---
+
+## Resource Usage
+
+aigate is a pure proxy — it doesn't run AI models, doesn't cache responses, and doesn't need a database. Resource usage is minimal:
+
+| Metric | Value |
+|--------|-------|
+| Binary size | ~10MB |
+| RAM (idle) | ~5-8MB |
+| RAM (100 concurrent streams) | ~20MB |
+| CPU | Near zero (JSON parse + HTTP forward) |
+| Disk | None (only a ~1KB token file) |
+
+Runs comfortably on a Raspberry Pi, a $5 VPS, or alongside other services on the same machine. Ideal for co-hosting with [OpenClaw](https://github.com/openclaw/openclaw), OpenCode, Aider, or any OpenAI-compatible application — aigate adds virtually no overhead to your server.
 
 ---
 
