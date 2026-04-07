@@ -2,9 +2,9 @@
 
 # ⚡ aigate
 
-**Universal AI Gateway — Use Claude, GPT & more through your existing subscriptions**
+**OpenAI-compatible and Anthropic-compatible AI Gateway for Kiro and AWS Bedrock**
 
-One binary. Zero config. Works everywhere.
+A lightweight local API proxy that lets Cursor, Cline, Continue, LangChain, and any OpenAI/Anthropic-compatible tool use Claude through Kiro — with a single binary and zero config.
 
 [![Go](https://img.shields.io/badge/Go-1.22+-00ADD8?logo=go&logoColor=white)](https://go.dev)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
@@ -14,16 +14,27 @@ One binary. Zero config. Works everywhere.
 
 ---
 
-## What is this?
+## What is aigate?
 
-aigate is a lightweight proxy that exposes OpenAI and Anthropic-compatible APIs from various AI backends. Download a single binary, point your tools at it, done.
+aigate is a lightweight OpenAI-compatible and Anthropic-compatible AI gateway for Kiro and AWS Bedrock. It lets tools like Cursor, Claude Code, Cline, Continue, and LangChain connect through a single local proxy.
 
-**Supported backends:**
-- ✅ Kiro (free Claude Sonnet 4.5, Haiku 4.5, Sonnet 4)
+Download one binary, run it, point your tools at `http://localhost:8000/v1` — done.
+
+### Supported AI Backends
+
+- ✅ **Kiro** — free Claude Sonnet 4.5, Haiku 4.5, Sonnet 4, DeepSeek, MiniMax, Qwen
 - 🔜 AWS Bedrock
 - 🔜 More coming...
 
-**Works with:** Cursor • Claude Code • Cline • Roo Code • Continue • OpenAI SDK • LangChain • any OpenAI/Anthropic-compatible tool
+### Works with Cursor, Cline, Continue, and More
+
+Any tool that supports OpenAI or Anthropic APIs works out of the box:
+
+Cursor • Claude Code • Codex CLI • OpenCode • Aider • Cline • Roo Code • Kilo Code • Continue • Zed • Windsurf • OpenAI SDK • Anthropic SDK • LangChain • Obsidian • any OpenAI/Anthropic-compatible tool
+
+> **None of these tools support Kiro natively.** aigate bridges the gap — it translates their standard API calls into Kiro's internal format.
+
+---
 
 ## Quick Start
 
@@ -38,34 +49,35 @@ curl -fsSL https://github.com/hoazgazh/aigate/releases/latest/download/aigate-da
 
 # Linux x86_64
 curl -fsSL https://github.com/hoazgazh/aigate/releases/latest/download/aigate-linux-amd64 -o aigate && chmod +x aigate
+
+# Linux ARM64
+curl -fsSL https://github.com/hoazgazh/aigate/releases/latest/download/aigate-linux-arm64 -o aigate && chmod +x aigate
 ```
 
 ### 2. Configure
 
-You need a Kiro account. Log in to [Kiro IDE](https://kiro.dev/) or run `kiro-cli login` first.
+Log in to [Kiro IDE](https://kiro.dev/) or run `kiro-cli login` first. Then:
 
 ```bash
 export API_KEY="my-secret-key"    # You make this up — protects your proxy
 ```
 
-aigate auto-detects your credentials from these locations (in order):
+**That's it.** aigate auto-detects your Kiro credentials. No other config needed.
+
+<details>
+<summary>How auto-detection works</summary>
+
+aigate checks these paths in order:
 
 | Source | Path | Used by |
 |--------|------|---------|
-| kiro-cli SQLite | `~/.local/share/kiro-cli/data.sqlite3` | Linux / WSL / kiro-cli users |
-| amazon-q SQLite | `~/.local/share/amazon-q/data.sqlite3` | amazon-q-developer-cli users |
-| Kiro IDE JSON | `~/.aws/sso/cache/kiro-auth-token.json` | macOS / Kiro IDE users |
+| kiro-cli SQLite | `~/.local/share/kiro-cli/data.sqlite3` | Linux / WSL / kiro-cli |
+| amazon-q SQLite | `~/.local/share/amazon-q/data.sqlite3` | amazon-q-developer-cli |
+| Kiro IDE JSON | `~/.aws/sso/cache/kiro-auth-token.json` | macOS / Kiro IDE |
 
-**No extra config needed** if you've already logged in with `kiro-cli login` or Kiro IDE.
+To override: `export KIRO_CLI_DB_FILE=...` or `export KIRO_CREDS_FILE=...`
 
-To override auto-detection:
-```bash
-# Linux / kiro-cli
-export KIRO_CLI_DB_FILE="~/.local/share/kiro-cli/data.sqlite3"
-
-# macOS / Kiro IDE
-export KIRO_CREDS_FILE="~/.aws/sso/cache/kiro-auth-token.json"
-```
+</details>
 
 ### 3. Start
 
@@ -73,79 +85,38 @@ export KIRO_CREDS_FILE="~/.aws/sso/cache/kiro-auth-token.json"
 ./aigate
 ```
 
-Server starts at `http://localhost:8000`. Keep this terminal open.
+```
+⚡ aigate v0.2.0
+   ├─ Listening on http://0.0.0.0:8000
+   ├─ OpenAI API:    /v1/chat/completions
+   ├─ Anthropic API: /v1/messages
+   └─ Models:        /v1/models
+```
 
-### 4. Use (in another terminal)
+Keep this terminal open. Open a new terminal for the next step.
+
+### 4. Use
 
 ```bash
-# Non-streaming (single JSON response)
 curl http://localhost:8000/v1/chat/completions \
   -H "Authorization: Bearer my-secret-key" \
   -H "Content-Type: application/json" \
   -d '{"model":"claude-sonnet-4-5","messages":[{"role":"user","content":"Hello!"}]}'
-
-# Streaming (real-time token-by-token)
-curl http://localhost:8000/v1/chat/completions \
-  -H "Authorization: Bearer my-secret-key" \
-  -H "Content-Type: application/json" \
-  -d '{"model":"claude-sonnet-4-5","messages":[{"role":"user","content":"Hello!"}],"stream":true}'
 ```
 
-Or use with any OpenAI-compatible tool — set base URL to `http://localhost:8000/v1` and API key to your `API_KEY`.
+---
 
-## Download Options
+## OpenAI-Compatible API
 
-| Platform | Architecture | Download |
-|----------|-------------|----------|
-| macOS | Apple Silicon (M1/M2/M3/M4) | [aigate-darwin-arm64](https://github.com/hoazgazh/aigate/releases/latest/download/aigate-darwin-arm64) |
-| macOS | Intel | [aigate-darwin-amd64](https://github.com/hoazgazh/aigate/releases/latest/download/aigate-darwin-amd64) |
-| Linux | x86_64 | [aigate-linux-amd64](https://github.com/hoazgazh/aigate/releases/latest/download/aigate-linux-amd64) |
-| Linux | ARM64 | [aigate-linux-arm64](https://github.com/hoazgazh/aigate/releases/latest/download/aigate-linux-arm64) |
-| Windows | x86_64 | [aigate-windows-amd64.exe](https://github.com/hoazgazh/aigate/releases/latest/download/aigate-windows-amd64.exe) |
+aigate exposes a fully OpenAI-compatible `/v1/chat/completions` endpoint. Any tool or SDK that works with OpenAI will work with aigate.
 
-## Build from source
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/v1/chat/completions` | POST | Chat completions (streaming + non-streaming) |
+| `/v1/models` | GET | List available models |
+| `/health` | GET | Health check |
 
-```bash
-git clone https://github.com/hoazgazh/aigate.git
-cd aigate
-make build
-API_KEY=my-secret-key ./bin/aigate
-```
-
-## Docker
-
-```bash
-docker run -p 8000:8000 \
-  -e API_KEY=my-secret-key \
-  -v ~/.aws/sso/cache:/root/.aws/sso/cache:ro \
-  -e KIRO_CREDS_FILE=/root/.aws/sso/cache/kiro-auth-token.json \
-  ghcr.io/hoazgazh/aigate
-```
-
-## API Endpoints
-
-| Endpoint | Description |
-|----------|-------------|
-| `GET /health` | Health check |
-| `GET /v1/models` | List available models |
-| `POST /v1/chat/completions` | OpenAI Chat Completions API |
-| `POST /v1/messages` | Anthropic Messages API |
-
-## Configuration
-
-| Env Variable | Required | Description |
-|-------------|----------|-------------|
-| `API_KEY` | ✅ | Password to protect your proxy (you make this up) |
-| `KIRO_CREDS_FILE` | One of these | Path to Kiro IDE JSON credentials |
-| `KIRO_CLI_DB_FILE` | | Path to kiro-cli SQLite database |
-| `REFRESH_TOKEN` | | Kiro refresh token (manual) |
-| `KIRO_REGION` | | AWS region (default: `us-east-1`) |
-| `PORT` | | Server port (default: `8000`) |
-| `HOST` | | Server host (default: `0.0.0.0`) |
-
-## Usage Examples
-
-### Python (OpenAI SDK)
+### Use with OpenAI Python SDK
 
 ```python
 from openai import OpenAI
@@ -160,7 +131,17 @@ for chunk in response:
     print(chunk.choices[0].delta.content or "", end="")
 ```
 
-### Python (Anthropic SDK)
+---
+
+## Anthropic-Compatible API
+
+aigate also exposes a native Anthropic `/v1/messages` endpoint for tools that use the Anthropic SDK directly.
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/v1/messages` | POST | Anthropic Messages API (streaming + non-streaming) |
+
+### Use with Anthropic Python SDK
 
 ```python
 import anthropic
@@ -174,12 +155,90 @@ response = client.messages.create(
 print(response.content[0].text)
 ```
 
-### Cursor / Cline / Continue
+---
+
+## Kiro Proxy — Use Kiro as an OpenAI API
+
+aigate acts as a proxy between your tools and Kiro. It translates OpenAI/Anthropic API calls into Kiro's internal format, handles authentication, token refresh, and streaming automatically.
+
+```
+Your Tool (Cursor, Cline, SDK...)
+    ↓ OpenAI/Anthropic API
+  aigate (localhost:8000)
+    ↓ Kiro internal API
+  Kiro → Claude Sonnet 4.5, Haiku 4.5, etc.
+```
+
+---
+
+## Use with Cursor / Cline / Continue
 
 Set in your IDE settings:
-- **Base URL:** `http://localhost:8000/v1`
-- **API Key:** your `API_KEY` value
-- **Model:** `claude-sonnet-4-5`
+
+| Setting | Value |
+|---------|-------|
+| Base URL | `http://localhost:8000/v1` |
+| API Key | your `API_KEY` value (e.g. `my-secret-key`) |
+| Model | `claude-sonnet-4-5` |
+
+### Codex CLI
+
+```toml
+# ~/.codex/config.toml
+openai_base_url = "http://localhost:8000/v1"
+model = "claude-sonnet-4-5"
+```
+```bash
+export OPENAI_API_KEY="my-secret-key"
+codex
+```
+
+### OpenCode
+
+```json
+// opencode.json
+{
+  "provider": {
+    "openai-compatible": {
+      "apiKey": "my-secret-key",
+      "baseURL": "http://localhost:8000/v1",
+      "models": {
+        "claude-sonnet-4-5": { "maxTokens": 16384 }
+      }
+    }
+  }
+}
+```
+
+### Aider
+
+```bash
+aider --openai-api-base http://localhost:8000/v1 --openai-api-key my-secret-key --model openai/claude-sonnet-4-5
+```
+
+### Claude Code
+
+```bash
+export ANTHROPIC_BASE_URL="http://localhost:8000"
+export ANTHROPIC_API_KEY="my-secret-key"
+claude
+```
+
+### Zed
+
+```json
+// settings.json
+{
+  "language_models": {
+    "openai": {
+      "api_url": "http://localhost:8000/v1",
+      "available_models": [{"name": "claude-sonnet-4-5", "max_tokens": 16384}]
+    }
+  }
+}
+```
+
+---
 
 ## Supported Models
 
@@ -194,6 +253,54 @@ Set in your IDE settings:
 | `qwen3-coder-next` | Qwen3 Coder — coding focused |
 
 > Model availability depends on your Kiro subscription tier.
+
+---
+
+## Download Options
+
+| Platform | Architecture | Download |
+|----------|-------------|----------|
+| macOS | Apple Silicon (M1/M2/M3/M4) | [aigate-darwin-arm64](https://github.com/hoazgazh/aigate/releases/latest/download/aigate-darwin-arm64) |
+| macOS | Intel | [aigate-darwin-amd64](https://github.com/hoazgazh/aigate/releases/latest/download/aigate-darwin-amd64) |
+| Linux | x86_64 | [aigate-linux-amd64](https://github.com/hoazgazh/aigate/releases/latest/download/aigate-linux-amd64) |
+| Linux | ARM64 | [aigate-linux-arm64](https://github.com/hoazgazh/aigate/releases/latest/download/aigate-linux-arm64) |
+| Windows | x86_64 | [aigate-windows-amd64.exe](https://github.com/hoazgazh/aigate/releases/latest/download/aigate-windows-amd64.exe) |
+
+---
+
+## Build from Source
+
+```bash
+git clone https://github.com/hoazgazh/aigate.git
+cd aigate
+make build
+API_KEY=my-secret-key ./bin/aigate
+```
+
+## Docker
+
+```bash
+docker run -p 8000:8000 \
+  -e API_KEY=my-secret-key \
+  -v ~/.local/share/kiro-cli:/root/.local/share/kiro-cli:ro \
+  ghcr.io/hoazgazh/aigate
+```
+
+---
+
+## Configuration
+
+| Env Variable | Required | Description |
+|-------------|----------|-------------|
+| `API_KEY` | ✅ | Password to protect your proxy (you make this up) |
+| `KIRO_CREDS_FILE` | Auto-detected | Path to Kiro IDE JSON credentials |
+| `KIRO_CLI_DB_FILE` | Auto-detected | Path to kiro-cli SQLite database |
+| `REFRESH_TOKEN` | | Kiro refresh token (manual) |
+| `KIRO_REGION` | | AWS region (default: `us-east-1`) |
+| `PORT` | | Server port (default: `8000`) |
+| `HOST` | | Server host (default: `0.0.0.0`) |
+
+---
 
 ## License
 
